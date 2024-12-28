@@ -1,4 +1,4 @@
-import { App, Notice, PluginSettingTab, Setting } from "obsidian";
+import { App, Notice, PluginSettingTab, Setting, TextComponent } from "obsidian";
 import { DEFAULT_SETTINGS } from "data/defaultSettings";
 import { OllamaCommand } from "model/OllamaCommand";
 import { Ollama } from "Ollama";
@@ -30,16 +30,75 @@ export class OllamaSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("default model")
-      .setDesc("Name of the default ollama model to use for prompts")
-      .addText((text) =>
-        text
-          .setPlaceholder("llama2")
-          .setValue(this.plugin.settings.defaultModel)
-          .onChange(async (value) => {
+      .setName("Select default model")
+      .setDesc("Select from available Ollama models")
+      .addDropdown(async (dropdown) => {
+        try {
+          const response = await fetch(`${this.plugin.settings.ollamaUrl}/api/tags`);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const data = await response.json();
+          const models = data.models || [];
+          
+          if (models.length === 0) {
+            dropdown.addOption("No models found", "none");
+            return;
+          }
+          
+          models.forEach((model: { name: string }) => {
+            dropdown.addOption(model.name, model.name);
+          });
+          
+          dropdown.setValue(this.plugin.settings.defaultModel);
+          dropdown.onChange(async (value) => {
             this.plugin.settings.defaultModel = value;
             await this.plugin.saveSettings();
-          })
+          });
+        } catch (error) {
+          console.error("Failed to fetch Ollama models:", error);
+          dropdown.addOption("Failed to load models", "error");
+          new Notice(`Failed to load models: ${error.message}`);
+        }
+      });
+
+    containerEl.createEl("h3", { text: "Model Management" });
+
+    const modelNameInput = new Setting(containerEl)
+      .setName("Download new model")
+      .setDesc("Enter the name of the model you want to download (e.g. llama2)")
+      .addText((text) => {
+        text.setPlaceholder("e.g. llama2");
+      })
+      .addButton((button) => 
+        button.setButtonText("Download").onClick(async () => {
+          const modelName = (modelNameInput.components[0] as TextComponent).getValue().trim();
+          if (!modelName) {
+            new Notice("Please enter a model name");
+            return;
+          }
+
+          try {
+            new Notice(`Starting download of ${modelName}...`);
+            const response = await fetch(`${this.plugin.settings.ollamaUrl}/api/pull`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ name: modelName }),
+            });
+
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => null);
+              throw new Error(errorData?.error || `HTTP error! status: ${response.status}`);
+            }
+
+            new Notice(`Successfully initiated download of ${modelName}. This may take a while...`);
+          } catch (error) {
+            console.error("Failed to download model:", error);
+            new Notice(`Failed to download model: ${error.message}`);
+          }
+        })
       );
 
     containerEl.createEl("h3", { text: "Commands" });
