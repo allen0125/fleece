@@ -16,6 +16,8 @@ export class OllamaSettingTab extends PluginSettingTab {
 
     containerEl.empty();
 
+    containerEl.createEl("h3", { text: "Ollama Configuration" });
+
     new Setting(containerEl)
       .setName("Ollama URL")
       .setDesc("URL of the Ollama server (e.g. http://localhost:11434)")
@@ -61,8 +63,6 @@ export class OllamaSettingTab extends PluginSettingTab {
           new Notice(`Failed to load models: ${error.message}`);
         }
       });
-
-    containerEl.createEl("h3", { text: "Model Management" });
 
     const modelNameInput = new Setting(containerEl)
       .setName("Download new model")

@@ -1,17 +1,10 @@
-# 🦙 Obsidian Ollama
+# Fleece
 
-This is a plugin for [Obsidian](https://obsidian.md) that allows you to use [Ollama](https://ollama.ai) within your notes.
-There are different pre configured promts:
+[![Fleece Demo](https://img.youtube.com/vi/_lasT7m_IvM/0.jpg)](https://www.youtube.com/watch?v=_lasT7m_IvM)
+> 👆 Click to watch the demo
 
-    - Summarize selection
-    - Explain selection
-    - Expand selection
-    - Rewrite selection (formal)
-    - Rewrite selection (casual)
-    - Rewrite selection (active voice)
-    - Rewrite selection (bullet points)
-    - Caption selection
+This project is a fork of [Ollama](https://github.com/hinterdupfinger/obsidian-ollama). Given the original project's inactivity and my vision for new features, I've created this fork while maintaining compliance with the original project's open source license.
 
-But you can also configure your own prompts, specify their model and temperature. The plugin always passes the prompt and either selected text or full note to Ollama and inserts the result into your note at the cursor position.
+This is a plugin for [Obsidian](https://obsidian.md) that allows you to use [Ollama](https://ollama.ai), (TODO)[GPT](https://platform.openai.com/), (TODO)[Claude](https://www.anthropic.com/), and more AI models within your notes.
 
-This requires a local installation of [Ollama](https://ollama.ai) which can currently be installed as a [MacOS app](https://github.com/jmorganca/ollama#download). By default the plugin will connect to `http://localhost:11434` - the port of the MacOS app.
+This requires a local installation of [Ollama](https://ollama.ai).
