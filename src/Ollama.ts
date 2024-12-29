@@ -20,57 +20,73 @@ export class Ollama extends Plugin {
         name: command.name,
         editorCallback: async (editor: Editor) => {
           const selection = editor.getSelection();
-          const text = selection ? selection : editor.getValue();
-          const cursorPosition = editor.getCursor();
           
-          // If there's a selection, make it bold and add user emoji
-          if (selection) {
+          if (!selection || selection.trim() === '') {
+            new Notice("Please select some text first");
+            return;
+          }
+          
+          try {
+            // Get selection boundaries
             const from = editor.getCursor('from');
             const to = editor.getCursor('to');
-            editor.replaceRange(`👤:\t**${selection}**`, from, to);
             
-            // Move cursor to the end of selection and add AI response line
-            editor.setCursor({
-              line: to.line,
-              ch: to.ch + 8  // Add 8 to account for the emoji, tab and '**' markers
-            });
-            editor.replaceRange("\n\n🤖:\t", editor.getCursor());
-          } else {
-            // If no selection, just add both user and AI markers
-            editor.replaceRange("\n👤:\t\n🤖:\t", cursorPosition);
-          }
+            // Format and insert user text
+            const formattedText = `👤 ${selection.trim()}`;
+            editor.replaceRange(formattedText, from, to);
+            
+            // Calculate the end of inserted text
+            const lines = formattedText.split('\n');
+            const endLine = from.line + lines.length - 1;
+            const lastLineLength = lines[lines.length - 1].length;
+            
+            // Insert AI marker
+            const aiMarker = '\n\n🤖 ';
+            const aiMarkerPos = {
+              line: endLine,
+              ch: lastLineLength
+            };
+            editor.replaceRange(aiMarker, aiMarkerPos);
+            
+            // Calculate AI response position
+            const aiResponsePosition = {
+              line: endLine + 2,
+              ch: 3
+            };
+            
+            let streamOutput = "";
+            
+            // Prepare the prompt
+            const cleanedPrompt = selection
+              .replace(/\r\n/g, '\n')
+              .replace(/\n+/g, ' ')
+              .trim();
 
-          let currentOutput = "";
-          let lastOutputLength = 0;  // Track the length of last output
+            const requestBody = {
+              prompt: `${command.prompt}\n\n${cleanedPrompt}`,
+              model: command.model || this.settings.defaultModel,
+              options: {
+                temperature: command.temperature || 0.2,
+              }
+            };
 
-          try {
+            console.log('Request body:', requestBody);
+
             const response = await fetch(`${this.settings.ollamaUrl}/api/generate`, {
               method: 'POST',
-              body: JSON.stringify({
-                prompt: command.prompt + "\n\n" + text,
-                model: command.model || this.settings.defaultModel,
-                options: {
-                  temperature: command.temperature || 0.2,
-                },
-              })
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(requestBody)
             });
+
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
             const reader = response.body?.getReader();
             if (!reader) throw new Error("Failed to get response reader");
-
-            // Calculate initial insert position
-            const insertPosition = selection ? 
-              { line: cursorPosition.line + 2, ch: 4 } : 
-              { line: cursorPosition.line + 2, ch: 4 };
-
-            // Reset output state
-            currentOutput = "";
-            editor.replaceRange("", insertPosition, {
-              line: insertPosition.line,
-              ch: insertPosition.ch + lastOutputLength
-            });
-            lastOutputLength = 0;
-
+            
             while (true) {
               const { done, value } = await reader.read();
               if (done) break;
@@ -80,38 +96,34 @@ export class Ollama extends Plugin {
 
               for (const line of lines) {
                 if (line.trim() === '') continue;
+                
                 try {
                   const parsed = JSON.parse(line);
+                  if (!parsed.response) continue;
+                  
                   const newContent = parsed.response;
                   
-                  // Update editor content after the robot emoji
+                  // Update content at AI response position
+                  const insertPos = {
+                    line: aiResponsePosition.line,
+                    ch: aiResponsePosition.ch + streamOutput.length
+                  };
+                  
                   editor.replaceRange(
                     newContent,
-                    {
-                      line: insertPosition.line,
-                      ch: insertPosition.ch + lastOutputLength
-                    },
-                    {
-                      line: insertPosition.line,
-                      ch: insertPosition.ch + lastOutputLength
-                    }
+                    insertPos,
+                    insertPos
                   );
                   
-                  lastOutputLength += newContent.length;
+                  streamOutput += newContent;
                 } catch (e) {
                   console.error("Failed to parse JSON:", e);
                 }
               }
             }
           } catch (error) {
-            new Notice(`Error while generating text: ${error.message}`);
-            const errorPosition = selection ? 
-              { line: cursorPosition.line + 1, ch: 1 } : 
-              cursorPosition;
-            editor.replaceRange("", errorPosition, {
-              ch: errorPosition.ch + 1,
-              line: errorPosition.line,
-            });
+            console.error("Error:", error);
+            new Notice(`Error: ${error.message}`);
           }
         },
       });
