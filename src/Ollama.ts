@@ -16,7 +16,7 @@ export class Ollama extends Plugin {
   private addPromptCommands() {
     this.settings.commands.forEach((command) => {
       this.addCommand({
-        id: kebabCase(command.name),
+        id: command.name,
         name: command.name,
         editorCallback: async (editor: Editor) => {
           const selection = editor.getSelection();
