@@ -1,10 +1,10 @@
 {
-  "id": "fleece",
-  "name": "Fleece",
-  "version": "0.0.2",
-  "minAppVersion": "0.15.0",
-  "description": "This is a plugin for Obsidian that enables the usage of Ollama, GPT, Claude, and more within your notes.",
-  "author": "allen0125",
-  "authorUrl": "https://github.com/allen0125",
-  "isDesktopOnly": true
+	"id": "fleece",
+	"name": "Fleece",
+	"minAppVersion": "0.15.0",
+	"description": "Enables the usage of Ollama, GPT, Claude, and more within your notes.",
+	"author": "allen0125",
+	"authorUrl": "https://github.com/allen0125",
+	"isDesktopOnly": true,
+	"version": "0.0.4"
 }
