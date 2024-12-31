@@ -15,7 +15,7 @@ This requires a local installation of [Ollama](https://ollama.ai).
 
 ### 1. Install the Plugin
 > ⚠️ The plugin is currently pending review for the Community Store. In the meantime:
-> 1. Download the latest release from the [Releases](https://github.com/your-username/fleece/releases) page
+> 1. Download the latest release from the [Releases](https://github.com/allen0125/fleece/releases) page
 > 2. Extract the downloaded file to your Obsidian plugins folder (`vault/.obsidian/plugins/`)
 
 - Open Obsidian Settings
